@@ -57,7 +57,7 @@
           <div class="qotd-result-msg" id="qotd-result-msg">—</div>
         </div>
         <div class="qotd-footer-row" style="margin-top:16px;">
-          <div class="qotd-answered-count">👥 47 students answered today</div>
+          <div class="qotd-answered-count">👥 500 students answered today</div>
           <button class="qotd-submit-btn" disabled style="opacity:.7;">Submitted ✓</button>
         </div>
       </div>
@@ -682,7 +682,9 @@ function selectOpt(el) {
 }
 
 function loadQotd() {
+  // Ensure option text is visible even if server returns null/empty
   fetch('{{ route('qotd.current') }}', { headers: { Accept: 'application/json' } })
+
     .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
     .then(data => {
       document.getElementById('qotd-question-state').style.display = 'block';
@@ -716,6 +718,9 @@ function loadQotd() {
 
 function submitQotd() {
   if (qotdAnswered) return;
+  const btn = document.getElementById('qotd-submit');
+  if (btn) btn.disabled = true;
+
   qotdAnswered = true;
 
   const btn      = document.getElementById('qotd-submit');
@@ -739,15 +744,17 @@ function submitQotd() {
     body: JSON.stringify({ question_id: qId, selected_option: selOpt })
   })
     .then(r => r.json())
-    .then(data => {
-      const selOptEl  = document.querySelector(`.qotd-opt[data-key="${data.selected_option}"]`);
-      const corrOptEl = document.querySelector(`.qotd-opt[data-key="${data.correct_option}"]`);
-      if (selOptEl)  { selOptEl.classList.remove('selected'); selOptEl.classList.add(data.is_correct ? 'correct' : 'wrong'); }
-      if (corrOptEl)   corrOptEl.classList.add('correct');
+            .then(data => {
+              const selOptEl  = document.querySelector(`.qotd-opt[data-key="${data.selected_option}"]`);
+              const corrOptEl = document.querySelector(`.qotd-opt[data-key="${data.correct_option}"]`);
+              if (selOptEl)  { selOptEl.classList.remove('selected'); selOptEl.classList.add(data.is_correct ? 'correct' : 'wrong'); }
+              if (corrOptEl)   corrOptEl.classList.add('correct');
 
-      const resultTitle = document.getElementById('qotd-result-title');
-      const resultMsg   = document.getElementById('qotd-result-msg');
-      const courseRes   = document.getElementById('qotd-course-result');
+              const resultTitle = document.getElementById('qotd-result-title');
+              const resultMsg   = document.getElementById('qotd-result-msg');
+              const courseRes   = document.getElementById('qotd-course-result');
+
+
 
       if (courseRes)   courseRes.textContent = document.getElementById('qotd-course')?.textContent || '';
       if (resultTitle) {

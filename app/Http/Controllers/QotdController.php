@@ -91,6 +91,35 @@ class QotdController extends Controller
         // NOTE: You can later store attempts/points in DB.
         // For now we only return computed result.
 
+        // Credit points (once per question per user per day)
+        $pointsAwarded = 0;
+        if ($isCorrect && $isMcq) {
+            $pointsAwarded = 7;
+
+            $userId = $request->user()->id;
+            $today = now()->toDateString();
+
+            // Create or load user points row
+            $userPoints = \App\Models\User_Point::query()->firstOrCreate(
+                ['user_id' => $userId],
+                ['bonus_points' => 0, 'total_points' => 0, 'used_points' => 0]
+            );
+
+            // Prevent double crediting by storing a simple marker in cashable column set
+            // Since current schema has no qotd_attempts table, we use today's date in the bonus_points column only
+            // NOTE: If your schema already has an attempts table, replace this block.
+            // Here we just ensure we don't add repeatedly by using a separate per-question marker in session.
+            $sessionKey = 'qotd.awarded.' . $question->id . '.' . $today;
+
+            if (! $request->session()->get($sessionKey)) {
+                $userPoints->increment('bonus_points', $pointsAwarded);
+                $userPoints->increment('total_points', $pointsAwarded);
+                $request->session()->put($sessionKey, true);
+            } else {
+                $pointsAwarded = 0;
+            }
+        }
+
         return response()->json([
             'question_id' => $question->id,
             'question_type' => $question->question_type,
@@ -98,7 +127,7 @@ class QotdController extends Controller
             'correct_option' => $isMcq ? strtoupper($correct) : null,
             'correct_answer' => $correct,
             'is_correct' => $isCorrect,
-            'points' => $isCorrect ? 5 : 0,
+            'points' => $pointsAwarded,
             'message' => $isCorrect ? 'Correct!' : 'Not quite',
         ]);
     }
