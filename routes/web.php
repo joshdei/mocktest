@@ -58,6 +58,11 @@ Route::post('/email/verification-notification', [EmailVerificationController::cl
     ->middleware('auth')
     ->name('verification.send');
 
+// Compatibility route: some views/flows might call the default Laravel name.
+Route::get('/email/verify', function () {
+    abort(404);
+})->middleware('auth')->name('verification.verify');
+
 /* ── GOOGLE AUTH ONE TAP (POST) ── */
 Route::post('/auth/google/onetap', [GoogleAuthController::class, 'oneTap'])->name('auth.google.onetap');
 
