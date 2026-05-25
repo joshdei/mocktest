@@ -1,0 +1,178 @@
+/* ── Google Auth Styles ── */
+
+/* Google Sign-In Button */
+.sv-google {
+  width: 100%;
+  padding: 11px;
+  background: var(--white, #FFFFFF);
+  border: 1.5px solid var(--border, #DDE8E1);
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  color: var(--text, #1C2B1E);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.sv-google:hover {
+  border-color: rgba(26, 107, 60, 0.35);
+  background: var(--off-white, #F8F9F6);
+  transform: translateY(-1px);
+}
+
+.sv-google:active {
+  transform: translateY(0);
+}
+
+/* Divider */
+.sv-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  color: var(--text-muted, #5A6B5E);
+  font-size: 0.78rem;
+}
+
+.sv-divider::before,
+.sv-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border, #DDE8E1);
+}
+
+/* Connected Badge */
+.connected-badge {
+  display: inline-block;
+  background: #ECFDF5;
+  color: #065F46;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.disconnected-badge {
+  display: inline-block;
+  background: #FEF2F2;
+  color: #991B1B;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+/* Social Account Card */
+.social-account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--gray-50, #F9FAFB);
+  border-radius: 0.75rem;
+  gap: 1rem;
+}
+
+.social-account-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.social-account-icon {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gray-200, #E5E7EB);
+}
+
+.social-account-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.social-account-name {
+  font-weight: 600;
+  color: var(--gray-900, #111827);
+  font-size: 0.9rem;
+}
+
+.social-account-status {
+  font-size: 0.85rem;
+  color: var(--gray-600, #4B5563);
+}
+
+/* Google One Tap Container */
+#g_id_onload,
+#g_id_signin {
+  display: none;
+}
+
+/* Alert Messages */
+.alert {
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alert-success {
+  background: #ECFDF5;
+  border-left: 4px solid #10B981;
+  color: #065F46;
+}
+
+.alert-error {
+  background: #FEF2F2;
+  border-left: 4px solid #EF4444;
+  color: #991B1B;
+}
+
+.alert-info {
+  background: #EFF6FF;
+  border-left: 4px solid #3B82F6;
+  color: #1E40AF;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .social-account-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .social-account-row > div:last-child {
+    width: 100%;
+  }
+
+  .social-account-row > div:last-child button,
+  .social-account-row > div:last-child a {
+    width: 100%;
+  }
+
+  .sv-google {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+
+  .sv-divider {
+    margin: 18px 0;
+    font-size: 0.75rem;
+  }
+}
