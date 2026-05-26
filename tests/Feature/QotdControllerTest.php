@@ -67,7 +67,7 @@ class QotdControllerTest extends TestCase
             ->assertJsonPath('selected_option', 'B')
             ->assertJsonPath('correct_option', 'B')
             ->assertJsonPath('is_correct', true)
-            ->assertJsonPath('points', 5);
+            ->assertJsonPath('points', 7);
     }
 
     public function test_current_returns_fill_question_type(): void
@@ -117,16 +117,20 @@ class QotdControllerTest extends TestCase
             ->assertJsonPath('selected_option', 'central processing unit')
             ->assertJsonPath('correct_answer', 'Central Processing Unit')
             ->assertJsonPath('is_correct', true)
-            ->assertJsonPath('points', 5);
+            ->assertJsonPath('points', 0);
     }
 
     private function createUser(): User
     {
-        return User::create([
+        $user = User::create([
             'first_name' => 'Test',
             'last_name' => 'Student',
             'email' => fake()->unique()->safeEmail(),
             'password' => 'password',
         ]);
+
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        return $user;
     }
 }

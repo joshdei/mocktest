@@ -1,11 +1,16 @@
 <?php
 
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\ChallengeController;
+use App\Http\Controllers\ChallengeNudgeController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\DraftTimetableController;
+use App\Http\Controllers\EmailVerificationResendController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\MockExamController;
+use App\Http\Controllers\NewPasswordController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaystackPlanController;
@@ -15,9 +20,8 @@ use App\Http\Controllers\QotdController;
 use App\Http\Controllers\ReviewsController;
 use App\Http\Controllers\TimeTableController;
 use App\Http\Controllers\WalletController;
-use App\Http\Controllers\EmailVerificationResendController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\NewPasswordController;
+use App\Http\Middleware\LogUserLogin;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /* ── PUBLIC PAGES ── */
@@ -68,7 +72,7 @@ Route::post('/email/verification/resend', [EmailVerificationResendController::cl
     ->name('verification.send');
 
 Route::get('/email/verify/{id}/{hash}', function (string $id, string $hash) {
-    $user = \App\Models\User::query()->findOrFail($id);
+    $user = User::query()->findOrFail($id);
 
     // Very basic hash check (protects against random links)
     if (! hash_equals(hash('sha256', $user->email), $hash)) {
@@ -86,9 +90,9 @@ Route::get('/email/verify/{id}/{hash}', function (string $id, string $hash) {
 Route::post('/auth/google/onetap', [GoogleAuthController::class, 'oneTap'])->name('auth.google.onetap');
 
 /* ── PROTECTED DASHBOARD ── */
-Route::middleware(['auth', \App\Http\Middleware\LogUserLogin::class])->group(function () {
+Route::middleware(['auth', LogUserLogin::class])->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
-    
+
     // Question of the Day
     Route::get('/dashboard/qotd/current', [QotdController::class, 'current'])->name('qotd.current');
     Route::post('/dashboard/qotd/submit', [QotdController::class, 'submit'])->name('qotd.submit');
@@ -170,11 +174,15 @@ Route::middleware(['auth', \App\Http\Middleware\LogUserLogin::class])->group(fun
     });
 
     /* ── STUDY CHALLENGES ── */
-    Route::post('/challenge/find-opponent', [\App\Http\Controllers\ChallengeController::class, 'findOpponent'])->name('challenge.find-opponent');
-    Route::post('/challenge/send', [\App\Http\Controllers\ChallengeController::class, 'sendChallenge'])->name('challenge.send');
-    Route::post('/challenge/{challenge}/challenger-submit', [\App\Http\Controllers\ChallengeController::class, 'challengerSubmit'])->name('challenge.challenger-submit');
-    Route::get('/challenge/{challenge}/play', [\App\Http\Controllers\ChallengeController::class, 'play'])->name('challenge.play');
-    Route::post('/challenge/{challenge}/opponent-submit', [\App\Http\Controllers\ChallengeController::class, 'opponentSubmit'])->name('challenge.opponent-submit');
+    Route::post('/challenge/find-opponent', [ChallengeController::class, 'findOpponent'])->name('challenge.find-opponent');
+    Route::post('/challenge/send', [ChallengeController::class, 'sendChallenge'])->name('challenge.send');
+    Route::post('/challenge/{challenge}/challenger-submit', [ChallengeController::class, 'challengerSubmit'])->name('challenge.challenger-submit');
+    Route::get('/challenge/{challenge}/play', [ChallengeController::class, 'play'])->name('challenge.play');
+    Route::post('/challenge/{challenge}/opponent-submit', [ChallengeController::class, 'opponentSubmit'])->name('challenge.opponent-submit');
+
+    // Nudge endpoint: resend invite email to opponent.
+    Route::post('/challenge/{challenge}/nudge', [ChallengeNudgeController::class, 'nudge'])
+        ->name('challenge.nudge');
 
     /* ── PLAN ROUTES ── */
 

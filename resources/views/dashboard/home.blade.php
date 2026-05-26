@@ -357,8 +357,9 @@
         ⏳ Waiting for <strong>{{ $partner?->first_name ?? 'opponent' }}</strong> to respond…
       </div>
       <div class="pv-actions">
-        <button class="pv-btn pv-btn-outline" onclick="toast('⏳ Waiting for opponent')">⏳ Pending</button>
-        <button class="pv-btn pv-btn-fill" onclick="toast('Challenge sent!')">⚡ Nudge</button>
+        <button class="pv-btn pv-btn-outline" type="button" onclick="return toast('⏳ Waiting for opponent')">⏳ Pending</button>
+        <button class="pv-btn pv-btn-fill" type="button" id="challenge-nudge-btn" data-challenge-id="{{ $activeChallenge->id }}" onclick="nudgeChallenge(this)">⚡ Nudge</button>
+
       </div>
     @endif
   </div>
@@ -632,9 +633,50 @@
 
 @push('scripts')
 
+<script>
+async function nudgeChallenge(btn) {
+  const challengeId = btn?.dataset?.challengeId;
+  if (!challengeId) {
+    toast('⚠️ Challenge id missing');
+    return;
+  }
+
+  btn.disabled = true;
+  const oldText = btn.innerHTML;
+  btn.innerHTML = 'Sending…';
+
+  try {
+    const res = await fetch(`{{ url('/dashboard') }}`.replace('/dashboard','') + `/challenge/${challengeId}/nudge`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({})
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || 'Request failed');
+    }
+
+    toast('⚡ Nudge sent!');
+  } catch (e) {
+    toast('❌ Failed to send nudge');
+    console.error(e);
+  } finally {
+    btn.innerHTML = oldText;
+    btn.disabled = false;
+  }
+}
+</script>
+
+
 {{-- ── GLOBAL TOAST ── --}}
 <script>
 function toast(msg, duration = 3000) {
+
   const container = document.getElementById('toastContainer');
   if (!container) return;
   const el = document.createElement('div');
@@ -682,7 +724,13 @@ function selectOpt(el) {
 
 function loadQotd() {
   // Ensure option text is visible even if server returns null/empty
-  fetch('{{ route('qotd.current') }}', { headers: { Accept: 'application/json' } })
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  fetch('{{ route('qotd.current') }}', {
+    headers: { Accept: 'application/json' },
+    signal: controller.signal
+  })
 
     .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
     .then(data => {
@@ -712,6 +760,9 @@ function loadQotd() {
     .catch(() => {
       const el = document.getElementById('qotd-question-text');
       if (el) el.textContent = 'Question of the Day is unavailable right now.';
+    })
+    .finally(() => {
+      clearTimeout(timeoutId);
     });
 }
 

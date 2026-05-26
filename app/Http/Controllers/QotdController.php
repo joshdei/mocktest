@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
+use App\Models\User_Point;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -28,15 +29,40 @@ class QotdController extends Controller
             return $res;
         }
 
-        $question = Question::query()
-            ->with('course')
+        $questionQuery = Question::query()
             ->whereNotNull('question')
-            ->inRandomOrder()
+            ->where('question', '!=', '');
+
+        $bounds = (clone $questionQuery)
+            ->selectRaw('MIN(id) as min_id, MAX(id) as max_id')
+            ->first();
+
+        if (! $bounds?->min_id || ! $bounds?->max_id) {
+            return response()->json(['error' => 'No questions found'], 404);
+        }
+
+        $question = null;
+        $minId = (int) $bounds->min_id;
+        $maxId = (int) $bounds->max_id;
+
+        for ($attempt = 0; $attempt < 3 && ! $question; $attempt++) {
+            $randomId = random_int($minId, $maxId);
+
+            $question = (clone $questionQuery)
+                ->where('id', '>=', $randomId)
+                ->orderBy('id')
+                ->first();
+        }
+
+        $question ??= (clone $questionQuery)
+            ->orderBy('id')
             ->first();
 
         if (! $question) {
             return response()->json(['error' => 'No questions found'], 404);
         }
+
+        $question->load('course');
 
         return response()->json([
             'question_id' => $question->id,
@@ -100,7 +126,7 @@ class QotdController extends Controller
             $today = now()->toDateString();
 
             // Create or load user points row
-            $userPoints = \App\Models\User_Point::query()->firstOrCreate(
+            $userPoints = User_Point::query()->firstOrCreate(
                 ['user_id' => $userId],
                 ['bonus_points' => 0, 'total_points' => 0, 'used_points' => 0]
             );
@@ -109,7 +135,7 @@ class QotdController extends Controller
             // Since current schema has no qotd_attempts table, we use today's date in the bonus_points column only
             // NOTE: If your schema already has an attempts table, replace this block.
             // Here we just ensure we don't add repeatedly by using a separate per-question marker in session.
-            $sessionKey = 'qotd.awarded.' . $question->id . '.' . $today;
+            $sessionKey = 'qotd.awarded.'.$question->id.'.'.$today;
 
             if (! $request->session()->get($sessionKey)) {
                 $userPoints->increment('bonus_points', $pointsAwarded);
