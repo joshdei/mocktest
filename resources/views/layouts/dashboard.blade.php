@@ -355,6 +355,19 @@ if ($userPlanColor) {
     @include('popup.emailverified')
 @endif
       @yield('dashboard-content')
+         @if ($errors->any())
+        <div class="sv-error show" style="display:flex;">
+          <span>⚠</span>
+          <span>{{ $errors->first() }}</span>
+        </div>
+        @endif
+
+        @if (session('status'))
+        <div class="sv-error show" style="display:flex;background:var(--green-light);color:var(--green);border-color:rgba(26,107,60,.25);">
+          <span>✅</span>
+          <span>{{ session('status') }}</span>
+        </div>
+        @endif
     </div><!-- /main -->
 <!-- Default Statcounter code for School
 https://psalmedu.com -->
