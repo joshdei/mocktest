@@ -16,7 +16,7 @@ use App\Http\Controllers\ReviewsController;
 use App\Http\Controllers\TimeTableController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\EmailVerificationController;
-use App\Http\Controllers\PasswordResetLinkController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\NewPasswordController;
 use Illuminate\Support\Facades\Route;
 
