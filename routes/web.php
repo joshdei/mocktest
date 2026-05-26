@@ -79,7 +79,7 @@ Route::get('/email/verify/{id}/{hash}', function (string $id, string $hash) {
     $user->forceFill(['email_verified_at' => now()])->save();
 
     return redirect()->route('dashboard')->with('status', 'Email verified successfully.');
-})->middleware('auth')->name('email.verify.custom');
+})->middleware('signed')->name('email.verify.custom');
 
 /* ── GOOGLE AUTH ONE TAP (POST) ── */
 

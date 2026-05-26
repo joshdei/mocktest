@@ -19,14 +19,15 @@ class VerifyEmailLinkMail extends Mailable
     ) {
     }
 
-    public function build(): static
-    {
-        return $this->subject('Verify Your Email')
-            ->view('emails.verify-email')
-            ->with([
+   public function build(): static
+{
+    return $this->subject('Verify Your Email')
+        ->html(
+            view('emails.verify-email', [
                 'userName' => $this->userName,
                 'verificationUrl' => $this->verificationUrl,
-            ]);
-    }
+            ])->render()
+        );
+}
 }
 
