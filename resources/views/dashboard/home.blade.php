@@ -728,15 +728,29 @@ function loadQotd() {
   const timeoutId = setTimeout(() => controller.abort(), 10000);
 
   fetch('{{ route('qotd.current') }}', {
-    headers: { Accept: 'application/json' },
+    method: 'GET',
+    headers: {
+      Accept: 'application/json'
+    },
     signal: controller.signal
   })
-
-    .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
+    .then(async r => {
+      // IMPORTANT: show why it failed in UI instead of staying on 'Loading…'
+      if (!r.ok) {
+        const text = await r.text().catch(() => '');
+        throw new Error(text || `HTTP ${r.status}`);
+      }
+      return r.json();
+    })
     .then(data => {
-      document.getElementById('qotd-question-state').style.display = 'block';
-      document.getElementById('qotd-result').style.display = 'none';
-      document.getElementById('qotd-question-id').value = data.question_id || '';
+      const qs = document.getElementById('qotd-question-state');
+      const rr = document.getElementById('qotd-result');
+      if (qs) qs.style.display = 'block';
+      if (rr) rr.style.display = 'none';
+
+      const qIdEl = document.getElementById('qotd-question-id');
+      if (qIdEl) qIdEl.value = data.question_id || '';
+
       qotdAnswered = false;
 
       const courseEl = document.getElementById('qotd-course');
@@ -745,7 +759,7 @@ function loadQotd() {
       if (questionEl) questionEl.textContent = data.question || '';
 
       ['A', 'B', 'C', 'D'].forEach(key => {
-        const opt  = document.querySelector(`.qotd-opt[data-key="${key}"]`);
+        const opt = document.querySelector(`.qotd-opt[data-key="${key}"]`);
         const span = document.querySelector(`[data-option-text="${key}"]`);
         if (span) span.textContent = data.options?.[key] || '';
         if (opt) {
@@ -755,16 +769,23 @@ function loadQotd() {
       });
 
       const btn = document.getElementById('qotd-submit');
-      if (btn) { btn.disabled = true; btn.textContent = 'Submit '; }
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Submit';
+      }
     })
-    .catch(() => {
+    .catch(err => {
+      console.error('QOTD load failed:', err);
       const el = document.getElementById('qotd-question-text');
-      if (el) el.textContent = 'Question of the Day is unavailable right now.';
+      const courseEl = document.getElementById('qotd-course');
+      if (courseEl) courseEl.textContent = '';
+      if (el) el.textContent = 'Could not load Question of the Day. Please refresh.';
     })
     .finally(() => {
       clearTimeout(timeoutId);
     });
 }
+
 
 function submitQotd() {
   if (qotdAnswered) return;
