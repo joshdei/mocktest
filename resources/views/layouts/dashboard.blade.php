@@ -349,7 +349,11 @@ if ($userPlanColor) {
 <!-- CONTENT -->
     <div class="content">
        @include('parties.alerts')
+     @php $isEmailVerified = auth()->check() && !empty(auth()->user()->email_verified_at); @endphp
 
+@if(!$isEmailVerified)
+    @include('popup.emailverified')
+@endif
       @yield('dashboard-content')
     </div><!-- /main -->
 <!-- Default Statcounter code for School

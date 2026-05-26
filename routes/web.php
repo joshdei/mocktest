@@ -16,6 +16,8 @@ use App\Http\Controllers\ReviewsController;
 use App\Http\Controllers\TimeTableController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\PasswordResetLinkController;
+use App\Http\Controllers\NewPasswordController;
 use Illuminate\Support\Facades\Route;
 
 /* ── PUBLIC PAGES ── */
@@ -40,9 +42,16 @@ Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [PageController::class, 'login'])->name('login');
     Route::get('/register', [PageController::class, 'register'])->name('register');
-    Route::get('/forgot-password', [PageController::class, 'forgotPassword'])->name('password.request');
 
-    /* ── GOOGLE AUTH (GUEST) ── */
+    // Forgot password
+    Route::get('/forgot-password', [PageController::class, 'forgotPassword'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+
+    // Reset password
+    Route::get('/reset-password/{token}', [PageController::class, 'resetPassword'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.update');
+
+    // Google Auth
     Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
     Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 });
@@ -67,7 +76,7 @@ Route::get('/email/verify', function () {
 Route::post('/auth/google/onetap', [GoogleAuthController::class, 'oneTap'])->name('auth.google.onetap');
 
 /* ── PROTECTED DASHBOARD ── */
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\LogUserLogin::class])->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
 
     // Question of the Day

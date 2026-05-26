@@ -918,6 +918,21 @@
   overflow-y: auto;
   padding-right: 6px;
 }
+
+/* Auto-moving scroller for reviews list (vertical marquee-like movement) */
+.reviews-scroll-wrapper {
+  overflow: hidden;
+}
+
+.reviews-scroll-track {
+  animation: reviewsAutoScroll 18s linear infinite;
+}
+
+@keyframes reviewsAutoScroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-120px); }
+}
+
 .reviews-scroll-track::-webkit-scrollbar { width: 4px; }
 .reviews-scroll-track::-webkit-scrollbar-track { background: var(--surface-2); border-radius: 999px; }
 .reviews-scroll-track::-webkit-scrollbar-thumb { background: var(--g200); border-radius: 999px; }

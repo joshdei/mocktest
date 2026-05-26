@@ -95,8 +95,7 @@
       </div>
     </div>
 
-  @else
-    @include('dashboard._qotd_verify_form')
+
   @endif
 
   {{-- ③ PERFORMANCE STATS --}}
@@ -154,7 +153,7 @@
     <div class="progress-block">
       <div class="progress-meta">
         <span class="progress-label-text">Mocks Completed</span>
-        <span class="progress-pct-text">3 / 10</span>
+        <span class="progress-pct-text">{{ $testsCompleted ?? 0 }} / {{ $testsGoal ?? 6 }}</span>
       </div>
       <div class="progress-track">
         <div class="progress-fill progress-fill-gold" id="mock-bar" style="width:0%;"></div>
@@ -165,7 +164,7 @@
       ⚡ Take <strong>2 more mocks</strong> — students who do score <strong>18% higher</strong> on average.
     </div>
   </div>
-
+@if($isEmailVerified)
   {{-- ⑤ LEADERBOARD --}}
   <div class="gm-card lb-card" role="region" aria-label="Top Ranks">
     <div class="gm-section-header">
@@ -281,7 +280,7 @@
       </div>
     </div>
   </div>
-
+@endif
   {{-- ⑦ STUDY PARTNER --}}
   @php
     use App\Models\StudyChallenge;
@@ -305,7 +304,7 @@
         : $activeChallenge->challenger;
     }
   @endphp
- @php $isEmailVerified = auth()->check() && !empty(auth()->user()->email_verified_at); @endphp
+
 
 @if($isEmailVerified)
   <div class="gm-card partner-card" role="region" aria-label="Study Partner">
@@ -918,7 +917,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const mock  = document.getElementById('mock-bar');
     const badge = document.getElementById('badge-fill');
     if (acc)   acc.style.width   = '77%';
-    if (mock)  mock.style.width  = '30%';
+
+    const mockCompleted = Number({{ $testsCompleted ?? 0 }});
+    const mockGoal = Number({{ $testsGoal ?? 6 }});
+    const mockPct = mockGoal > 0 ? Math.min(100, Math.round((mockCompleted / mockGoal) * 100)) : 0;
+    if (mock)  mock.style.width  = mockPct + '%';
+
     if (badge) badge.style.width = '60%';
   }, 400);
 });

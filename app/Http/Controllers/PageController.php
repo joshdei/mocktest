@@ -83,10 +83,21 @@ class PageController extends Controller
             $performanceData['leaderboard']
         );
 
+        // Progress-to-passing: completed mocks count
+        // Using tests table (Test model). Completed is when score > 0.
+        $testsCompleted = (int) \App\Models\Test::query()
+            ->where('user_id', Auth::id())
+            ->where('score', '>', 0)
+            ->count();
+
+
+        $testsGoal = 6; // matches your UI requirement ("up to 6")
+
         return view('dashboard.home', compact(
             'pastQuestions', 'summaries', 'calendar',
             'nextEvent', 'recentDownloads', 'wallet',
-            'reviews', 'streakData', 'performanceData', 'badgeData'
+            'reviews', 'streakData', 'performanceData', 'badgeData',
+            'testsCompleted', 'testsGoal'
         ));
     }
 
@@ -155,7 +166,13 @@ class PageController extends Controller
     {
         return view('auth.forgot-password');
     }
-
+   public function resetPassword(Request $request, string $token)
+    {
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => $request->email,
+        ]);
+    }
     public function about()
     {
         return view('about');
