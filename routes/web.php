@@ -63,25 +63,25 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
 // Resend verification email (custom route for this project)
-Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
-    ->middleware('auth')
-    ->name('verification.send');
 
-// Compatibility route: some views/flows might call the default Laravel name.
-Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-    ->middleware(['auth', 'signed'])
-    ->name('verification.verify');
-
-Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
-    ->middleware('auth')
-    ->name('verification.notice');
 /* ── GOOGLE AUTH ONE TAP (POST) ── */
 Route::post('/auth/google/onetap', [GoogleAuthController::class, 'oneTap'])->name('auth.google.onetap');
 
 /* ── PROTECTED DASHBOARD ── */
 Route::middleware(['auth', \App\Http\Middleware\LogUserLogin::class])->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
+      // Show "check your email" page
+    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
+        ->name('verification.notice');
 
+    // Resend verification email
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->name('verification.send');
+
+    // Handle the signed link from the email
+    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware('signed')
+        ->name('verification.verify');
     // Question of the Day
     Route::get('/dashboard/qotd/current', [QotdController::class, 'current'])->name('qotd.current');
     Route::post('/dashboard/qotd/submit', [QotdController::class, 'submit'])->name('qotd.submit');
