@@ -71,7 +71,8 @@ Route::post('/email/verification-notification', [EmailVerificationController::cl
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
     ->middleware(['auth', 'signed'])
     ->name('verification.verify');
-    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
+
+Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
     ->middleware('auth')
     ->name('verification.notice');
 /* ── GOOGLE AUTH ONE TAP (POST) ── */
