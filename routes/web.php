@@ -15,7 +15,7 @@ use App\Http\Controllers\QotdController;
 use App\Http\Controllers\ReviewsController;
 use App\Http\Controllers\TimeTableController;
 use App\Http\Controllers\WalletController;
-use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\EmailVerificationResendController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\NewPasswordController;
 use Illuminate\Support\Facades\Route;
@@ -63,7 +63,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
 // Resend verification email (custom route for this project)
-Route::post('/email/verification/resend', [\App\Http\Controllers\EmailVerificationResendController::class, '__invoke'])
+Route::post('/email/verification/resend', [EmailVerificationResendController::class, '__invoke'])
     ->middleware('auth')
     ->name('verification.send');
 
