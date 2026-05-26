@@ -38,5 +38,27 @@ class EmailVerificationController extends Controller
 
         return back()->with('error', 'Email verification is not configured for this account.');
     }
+
+
+    public function notice()
+{
+    return auth()->user()->hasVerifiedEmail()
+        ? redirect()->route('dashboard')
+        : view('auth.verify-email');
+}
+
+public function verify(Request $request, $id, $hash)
+{
+    $user = \App\Models\User::findOrFail($id);
+
+    abort_if(! hash_equals((string) $hash, sha1($user->getEmailForVerification())), 403);
+    abort_if(! $request->hasValidSignature(), 403);
+
+    if (! $user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+    }
+
+    return redirect()->route('dashboard')->with('verified', true);
+}
 }
 
