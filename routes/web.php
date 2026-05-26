@@ -63,25 +63,32 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
 // Resend verification email (custom route for this project)
+Route::post('/email/verification/resend', [\App\Http\Controllers\EmailVerificationResendController::class, '__invoke'])
+    ->middleware('auth')
+    ->name('verification.send');
+
+Route::get('/email/verify/{id}/{hash}', function (string $id, string $hash) {
+    $user = \App\Models\User::query()->findOrFail($id);
+
+    // Very basic hash check (protects against random links)
+    if (! hash_equals(hash('sha256', $user->email), $hash)) {
+        abort(403);
+    }
+
+    // Mark verified
+    $user->forceFill(['email_verified_at' => now()])->save();
+
+    return redirect()->route('dashboard')->with('status', 'Email verified successfully.');
+})->middleware('auth')->name('email.verify.custom');
 
 /* ── GOOGLE AUTH ONE TAP (POST) ── */
+
 Route::post('/auth/google/onetap', [GoogleAuthController::class, 'oneTap'])->name('auth.google.onetap');
 
 /* ── PROTECTED DASHBOARD ── */
 Route::middleware(['auth', \App\Http\Middleware\LogUserLogin::class])->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
-      // Show "check your email" page
-    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
-        ->name('verification.notice');
-
-    // Resend verification email
-    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
-        ->name('verification.send');
-
-    // Handle the signed link from the email
-    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-        ->middleware('signed')
-        ->name('verification.verify');
+    
     // Question of the Day
     Route::get('/dashboard/qotd/current', [QotdController::class, 'current'])->name('qotd.current');
     Route::post('/dashboard/qotd/submit', [QotdController::class, 'submit'])->name('qotd.submit');
