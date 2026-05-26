@@ -287,8 +287,27 @@ if ($userPlanColor) {
         @endif
     </div> --}}
 
+
+     
+
+
     <div class="sb-section" style="margin-top:10px;">
+      
         <div class="sb-label">Account</div>
+
+         @php $isEmailVerified = auth()->check() && !empty(auth()->user()->email_verified_at); @endphp
+
+@if(!$isEmailVerified)
+        <form method="POST" action="{{ route('verification.send') }}">
+                @csrf
+                <button
+                    type="submit"
+                    style="width:100%; background:#16a34a; border:none; border-radius:10px; color:#fff; font-size:14px; font-weight:600; padding:13px; cursor:pointer; margin-bottom:10px;"
+                >
+                   Verify Your Email
+                </button>
+            </form>
+@endif
         <a href="{{ route('profile') }}" class="sb-item {{ request()->routeIs('profile') ? 'active' : '' }}">
             <i class="fas fa-user si"></i> My Profile
         </a>
