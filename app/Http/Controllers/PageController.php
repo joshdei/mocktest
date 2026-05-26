@@ -12,7 +12,6 @@ use App\Models\SummaryPdf;
 use App\Models\Transaction;
 use App\Models\UserCashback;
 use App\Models\UserSubscription;
-use App\Services\BadgeService;
 use App\Services\PerformanceService;
 use App\Services\StreakService;
 use Carbon\Carbon;
@@ -26,8 +25,7 @@ class PageController extends Controller
 {
     public function __construct(
         private StreakService $streakService,
-        private PerformanceService $performanceService,
-        private BadgeService $badgeService
+        private PerformanceService $performanceService
     ) {}
 
     public function index()
@@ -77,27 +75,11 @@ class PageController extends Controller
             'leaderboard' => $this->performanceService->getLeaderboard(Auth::user(), 'week'),
             'heatmap' => $this->performanceService->getWeeklyHeatmap(Auth::user()),
         ];
-        $badgeData = $this->badgeService->syncForUser(
-            Auth::user(),
-            $streakData,
-            $performanceData['leaderboard']
-        );
-
-        // Progress-to-passing: completed mocks count
-        // Using tests table (Test model). Completed is when score > 0.
-        $testsCompleted = (int) \App\Models\Test::query()
-            ->where('user_id', Auth::id())
-            ->where('score', '>', 0)
-            ->count();
-
-
-        $testsGoal = 6; // matches your UI requirement ("up to 6")
 
         return view('dashboard.home', compact(
             'pastQuestions', 'summaries', 'calendar',
             'nextEvent', 'recentDownloads', 'wallet',
-            'reviews', 'streakData', 'performanceData', 'badgeData',
-            'testsCompleted', 'testsGoal'
+            'reviews', 'streakData', 'performanceData'
         ));
     }
 
@@ -166,18 +148,19 @@ class PageController extends Controller
     {
         return view('auth.forgot-password');
     }
-   public function resetPassword(Request $request, string $token)
+
+    public function about()
+    {
+        return view('about');
+    }
+
+      public function resetPassword(Request $request, string $token)
     {
         return view('auth.reset-password', [
             'token' => $token,
             'email' => $request->email,
         ]);
     }
-    public function about()
-    {
-        return view('about');
-    }
-
     /* ── STORE ── */
     public function storeSummaries(Request $request)
     {

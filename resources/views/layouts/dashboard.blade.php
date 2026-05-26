@@ -153,7 +153,6 @@ if ($userPlanColor) {
   margin-left: var(--sidebar-w);
   flex: 1; display: flex; flex-direction: column;
   min-width: 0;
-  padding-top: var(--nav-h);
 }
 
 /* ── TOPBAR ── */
@@ -163,7 +162,7 @@ if ($userPlanColor) {
   border-bottom: 1.5px solid var(--border);
   display: flex; align-items: center;
   padding: 0 28px; gap: 14px;
-  position: fixed; top: 0; left: var(--sidebar-w); right: 0; z-index: 120;
+  position: sticky; top: 0; z-index: 50;
 }
 .page-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; color: var(--text); flex: 1; }
 .search-wrap {
@@ -287,27 +286,8 @@ if ($userPlanColor) {
         @endif
     </div> --}}
 
-
-     
-
-
     <div class="sb-section" style="margin-top:10px;">
-      
         <div class="sb-label">Account</div>
-
-         @php $isEmailVerified = auth()->check() && !empty(auth()->user()->email_verified_at); @endphp
-
-@if(!$isEmailVerified)
-        <form method="POST" action="{{ route('verification.send') }}">
-                @csrf
-                <button
-                    type="submit"
-                    style="width:100%; background:#16a34a; border:none; border-radius:10px; color:#fff; font-size:14px; font-weight:600; padding:13px; cursor:pointer; margin-bottom:10px;"
-                >
-                   Verify Your Email
-                </button>
-            </form>
-@endif
         <a href="{{ route('profile') }}" class="sb-item {{ request()->routeIs('profile') ? 'active' : '' }}">
             <i class="fas fa-user si"></i> My Profile
         </a>
@@ -368,25 +348,8 @@ if ($userPlanColor) {
 <!-- CONTENT -->
     <div class="content">
        @include('parties.alerts')
-     @php $isEmailVerified = auth()->check() && !empty(auth()->user()->email_verified_at); @endphp
 
-@if(!$isEmailVerified)
-    @include('popup.emailverified')
-@endif
       @yield('dashboard-content')
-         @if ($errors->any())
-        <div class="sv-error show" style="display:flex;">
-          <span>⚠</span>
-          <span>{{ $errors->first() }}</span>
-        </div>
-        @endif
-
-        @if (session('status'))
-        <div class="sv-error show" style="display:flex;background:var(--green-light);color:var(--green);border-color:rgba(26,107,60,.25);">
-          <span>✅</span>
-          <span>{{ session('status') }}</span>
-        </div>
-        @endif
     </div><!-- /main -->
 <!-- Default Statcounter code for School
 https://psalmedu.com -->

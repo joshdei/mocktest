@@ -1,28 +1,24 @@
 <?php
 
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\ChallengeController;
-use App\Http\Controllers\ChallengeNudgeController;
-use App\Http\Controllers\ComplaintController;
-use App\Http\Controllers\DraftTimetableController;
-use App\Http\Controllers\EmailVerificationResendController;
-use App\Http\Controllers\GoogleAuthController;
-use App\Http\Controllers\MockExamController;
+use App\Http\Controllers\PasswordResetLinkController;
 use App\Http\Controllers\NewPasswordController;
-use App\Http\Controllers\PageController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\PaystackPlanController;
-use App\Http\Controllers\PlanController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\QotdController;
-use App\Http\Controllers\ReviewsController;
-use App\Http\Controllers\TimeTableController;
-use App\Http\Controllers\WalletController;
-use App\Http\Middleware\LogUserLogin;
-use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\{
+   PageController,
+   AuthController,
+   ProfileController,
+   WalletController,
+   CartController,
+   PaymentController,
+   TimeTableController,
+   DraftTimetableController,
+   MockExamController,
+   PlanController,
+   PaystackPlanController,
+   ComplaintController,
+   ReviewsController,
+   GoogleAuthController
+};
 
 /* ── PUBLIC PAGES ── */
 
@@ -30,7 +26,7 @@ Route::get('/', [PageController::class, 'index'])->name('home');
 
 Route::get('/sitemap.xml', function () {
     return response()->file(public_path('sitemap.xml'), [
-        'Content-Type' => 'application/xml',
+        'Content-Type' => 'application/xml'
     ]);
 });
 Route::middleware('auth')->prefix('wallet')->group(function () {
@@ -63,40 +59,19 @@ Route::middleware('guest')->group(function () {
 /* ── AUTH ACTIONS (POST) ── */
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
-// Resend verification email (custom route for this project)
-Route::post('/email/verification/resend', [EmailVerificationResendController::class, '__invoke'])
-    ->middleware('auth')
-    ->name('verification.send');
-
-Route::get('/email/verify/{id}/{hash}', function (string $id, string $hash) {
-    $user = User::query()->findOrFail($id);
-
-    // Very basic hash check (protects against random links)
-    if (! hash_equals(hash('sha256', $user->email), $hash)) {
-        abort(403);
-    }
-
-    // Mark verified
-    $user->forceFill(['email_verified_at' => now()])->save();
-
-    return redirect()->route('dashboard')->with('status', 'Email verified successfully.');
-})->middleware('signed')->name('email.verify.custom');
-
 /* ── GOOGLE AUTH ONE TAP (POST) ── */
-
 Route::post('/auth/google/onetap', [GoogleAuthController::class, 'oneTap'])->name('auth.google.onetap');
 
 /* ── PROTECTED DASHBOARD ── */
-Route::middleware(['auth', LogUserLogin::class])->group(function () {
+Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
 
     // Question of the Day
-    Route::get('/dashboard/qotd/current', [QotdController::class, 'current'])->name('qotd.current');
-    Route::post('/dashboard/qotd/submit', [QotdController::class, 'submit'])->name('qotd.submit');
-
+    Route::get('/daily-question', [\App\Http\Controllers\DailyQuestionController::class, 'show'])->name('daily.question.show');
+    Route::post('/daily-question/submit', [\App\Http\Controllers\DailyQuestionController::class, 'submit'])->name('daily.question.submit');
     Route::post('/compliant', [ComplaintController::class, 'compliant'])->name('compliant');
     Route::post('/reviews', [ReviewsController::class, 'store'])->name('reviews.store');
     Route::get('/paystack/initialize', [PaymentController::class, 'payWithPaystack'])->name('paystack.initialize');
@@ -127,75 +102,66 @@ Route::middleware(['auth', LogUserLogin::class])->group(function () {
 
     /* ── CART ── */
     Route::prefix('cart')->name('cart.')->group(function () {
-        Route::get('/', [CartController::class, 'getCart'])->middleware('auth');
-        Route::post('/add', [CartController::class, 'add'])->middleware('auth');
-        Route::delete('/remove/{id}', [CartController::class, 'remove'])->middleware('auth');
-        Route::post('/update/{id}', [CartController::class, 'update'])->middleware('auth');
-        Route::get('/view', [CartController::class, 'view'])->middleware('auth')->name('view');
-        Route::get('/checkout', [CartController::class, 'checkout'])->middleware('auth')->name('checkout'); // ← ADD THIS
-        Route::post('/checkout', [CartController::class, 'processCheckout'])->middleware('auth')->name('process-checkout');
+    Route::get('/', [CartController::class, 'getCart'])->middleware('auth');
+    Route::post('/add', [CartController::class, 'add'])->middleware('auth');
+    Route::delete('/remove/{id}', [CartController::class, 'remove'])->middleware('auth');
+    Route::post('/update/{id}', [CartController::class, 'update'])->middleware('auth');
+    Route::get('/view', [CartController::class, 'view'])->middleware('auth')->name('view');
+    Route::get('/checkout', [CartController::class, 'checkout'])->middleware('auth')->name('checkout'); // ← ADD THIS
+    Route::post('/checkout', [CartController::class, 'processCheckout'])->middleware('auth')->name('process-checkout');
 
     });
 
-    Route::prefix('timetable')->name('timetable.')->group(function () {
-        Route::post('/generate', [TimeTableController::class, 'generate'])->name('generate');
-        Route::get('/suggest', [TimeTableController::class, 'suggestCourses'])->name('suggest');
-        Route::get('/courses', [TimeTableController::class, 'getAllCourses'])->name('courses');
-        Route::post('/save', [TimeTableController::class, 'save'])->name('save');
-        Route::get('/load', [TimeTableController::class, 'load'])->name('load');
-        Route::delete('/delete/{id}', [TimeTableController::class, 'delete'])->name('delete');
-        // for draft
-        Route::post('/draft', [TimeTableController::class, 'saveDraft'])->name('draft');
-        Route::get('/draft/load', [TimeTableController::class, 'loadDraft'])->name('draft.load');
-        Route::delete('/draft/delete/{id}', [TimeTableController::class, 'deleteDraft'])->name('draft.delete');
-    });
-
-    Route::prefix('draft')->name('draft.')->group(function () {
-        Route::get('/draft', [DraftTimetableController::class, 'index'])->name('index');
-        Route::post('/generate', [DraftTimetableController::class, 'generate'])->name('generate');
-        Route::get('/suggest', [DraftTimetableController::class, 'suggestCourses'])->name('suggest');
-        Route::get('/courses', [DraftTimetableController::class, 'getAllCourses'])->name('courses');
-        Route::post('/save', [DraftTimetableController::class, 'save'])->name('save');
-        Route::get('/load', [DraftTimetableController::class, 'load'])->name('load');
-        Route::delete('/delete/{id}', [DraftTimetableController::class, 'delete'])->name('delete');
-    });
-
-    Route::prefix('mock')->name('mock.')->group(function () {
-        Route::get('/', [MockExamController::class, 'index'])->name('index');
-        Route::get('/setup/{courseId}', [MockExamController::class, 'setup'])->name('setup');
-        Route::post('/charge/{courseId}/{planId}', [MockExamController::class, 'charge'])->name('charge');
-        Route::get('/setup2/{courseId}', [MockExamController::class, 'setup2'])->name('setup2');
-        Route::post('/start/{courseId}', [MockExamController::class, 'start'])->name('start');
-        Route::post('/submit', [MockExamController::class, 'submit'])->name('submit');
-        Route::get('/result', [MockExamController::class, 'result'])->name('result');
-        Route::get('/review', [MockExamController::class, 'review'])->name('review');
-        Route::get('/results', [MockExamController::class, 'results'])->name('results');
-        Route::post('/ai-explain', [MockExamController::class, 'aiExplanation'])->name('ai-explain');
-    });
-
-    /* ── STUDY CHALLENGES ── */
-    Route::post('/challenge/find-opponent', [ChallengeController::class, 'findOpponent'])->name('challenge.find-opponent');
-    Route::post('/challenge/send', [ChallengeController::class, 'sendChallenge'])->name('challenge.send');
-    Route::post('/challenge/{challenge}/challenger-submit', [ChallengeController::class, 'challengerSubmit'])->name('challenge.challenger-submit');
-    Route::get('/challenge/{challenge}/play', [ChallengeController::class, 'play'])->name('challenge.play');
-    Route::post('/challenge/{challenge}/opponent-submit', [ChallengeController::class, 'opponentSubmit'])->name('challenge.opponent-submit');
-
-    // Nudge endpoint: resend invite email to opponent.
-    Route::post('/challenge/{challenge}/nudge', [ChallengeNudgeController::class, 'nudge'])
-        ->name('challenge.nudge');
-
-    /* ── PLAN ROUTES ── */
-
-    Route::prefix('plan')->name('plan.')->group(function () {
-        Route::get('/', [PlanController::class, 'index'])->name('index');
-        Route::post('/subscribe', [PlanController::class, 'subscribe'])->name('subscribe');
-        Route::post('/upgrade', [PlanController::class, 'upgrade'])->name('upgrade');
-    });
-
-    /* ── PAYSTACK PLAN PAYMENT ROUTES ── */
-    Route::prefix('paystack/plan')->name('paystack.plan.')->group(function () {
-        Route::post('/initialize', [PaystackPlanController::class, 'initialize'])->name('initialize');
-        Route::get('/callback', [PaystackPlanController::class, 'handleCallback'])->name('callback');
-        Route::get('/cancel', [PaystackPlanController::class, 'cancel'])->name('cancel');
-    });
+ Route::prefix('timetable')->name('timetable.')->group(function () {
+     Route::post('/generate', [TimeTableController::class, 'generate'])->name('generate');
+    Route::get('/suggest', [TimeTableController::class, 'suggestCourses'])->name('suggest');
+    Route::get('/courses', [TimeTableController::class, 'getAllCourses'])->name('courses');
+    Route::post('/save', [TimeTableController::class, 'save'])->name('save');
+    Route::get('/load', [TimeTableController::class, 'load'])->name('load');
+    Route::delete('/delete/{id}', [TimeTableController::class, 'delete'])->name('delete');
+    //for draft
+    Route::post('/draft', [TimeTableController::class, 'saveDraft'])->name('draft');
+    Route::get('/draft/load', [TimeTableController::class, 'loadDraft'])->name('draft.load');
+    Route::delete('/draft/delete/{id}', [TimeTableController::class, 'deleteDraft'])->name('draft.delete');
 });
+
+ Route::prefix('draft')->name('draft.')->group(function () {
+     Route::get('/draft', [DraftTimetableController::class, 'index'])->name('index');
+     Route::post('/generate', [DraftTimetableController::class, 'generate'])->name('generate');
+    Route::get('/suggest', [DraftTimetableController::class, 'suggestCourses'])->name('suggest');
+    Route::get('/courses', [DraftTimetableController::class, 'getAllCourses'])->name('courses');
+    Route::post('/save', [DraftTimetableController::class, 'save'])->name('save');
+    Route::get('/load', [DraftTimetableController::class, 'load'])->name('load');
+    Route::delete('/delete/{id}', [DraftTimetableController::class, 'delete'])->name('delete');
+});
+
+ 
+Route::prefix('mock')->name('mock.')->group(function () {
+     Route::get('/', [MockExamController::class, 'index'])->name('index');
+     Route::get('/setup/{courseId}', [MockExamController::class, 'setup'])->name('setup');
+     Route::post('/charge/{courseId}/{planId}', [MockExamController::class, 'charge'])->name('charge');
+    Route::get('/setup2/{courseId}', [MockExamController::class, 'setup2'])->name('setup2');
+     Route::post('/start/{courseId}', [MockExamController::class, 'start'])->name('start');
+     Route::post('/submit', [MockExamController::class, 'submit'])->name('submit');
+     Route::get('/result', [MockExamController::class, 'result'])->name('result');
+     Route::get('/review', [MockExamController::class, 'review'])->name('review');
+     Route::get('/results', [MockExamController::class, 'results'])->name('results');
+     Route::post('/ai-explain', [MockExamController::class, 'aiExplanation'])->name('ai-explain');
+});
+
+/* ── PLAN ROUTES ── */
+Route::prefix('plan')->name('plan.')->group(function () {
+    Route::get('/', [PlanController::class, 'index'])->name('index');
+    Route::post('/subscribe', [PlanController::class, 'subscribe'])->name('subscribe');
+    Route::post('/upgrade', [PlanController::class, 'upgrade'])->name('upgrade');
+});
+
+/* ── PAYSTACK PLAN PAYMENT ROUTES ── */
+Route::prefix('paystack/plan')->name('paystack.plan.')->group(function () {
+    Route::post('/initialize', [PaystackPlanController::class, 'initialize'])->name('initialize');
+    Route::get('/callback', [PaystackPlanController::class, 'handleCallback'])->name('callback');
+    Route::get('/cancel', [PaystackPlanController::class, 'cancel'])->name('cancel');
+});
+});
+
+

@@ -12,7 +12,6 @@ use App\Models\TestAnswer;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\UserSubscription;
-use App\Services\BadgeService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
@@ -272,8 +271,6 @@ class MockExamController extends Controller
 
             session(['exam_test_id' => $test->id]);
         });
-
-        app(BadgeService::class)->syncForUser($request->user());
 
         session([
             'exam_results' => $results,
