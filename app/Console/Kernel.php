@@ -18,6 +18,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('questions:notify-today')
             ->daily()
             ->at('08:00');
+
+        // Weekly rank boost email (every week, Monday)
+        $schedule->command('rank:send-weekly-boost')
+            ->weekly()
+            ->mondays()
+            ->at('09:00');
     }
 
     protected function commands(): void

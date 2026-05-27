@@ -116,7 +116,8 @@ class PerformanceService
     {
         [$startDate] = $this->getPeriodDates($period);
 
-        $users = User::with('tests')
+        $all = User::query()
+            ->with('tests')
             ->get()
             ->map(function ($u) use ($startDate, $user) {
                 $tests = $u->tests()
@@ -127,19 +128,37 @@ class PerformanceService
 
                 return [
                     'id' => $u->id,
-                    'name' => $u->first_name.' '.$u->last_name,
-                    'initials' => strtoupper(substr($u->first_name, 0, 1).substr($u->last_name, 0, 1)),
+                    'name' => trim(($u->first_name ?? '').' '.($u->last_name ?? '')),
+                    'initials' => strtoupper(substr($u->first_name ?? '', 0, 1).substr($u->last_name ?? '', 0, 1)),
                     'score' => $score,
                     'you' => $u->id === $user->id,
                 ];
             })
-            ->filter(fn ($u) => $u['score'] > 0)
+            // Keep anyone with a positive score OR the current user (so they always see their position)
+            ->filter(fn ($u) => ($u['score'] ?? 0) > 0 || ($u['id'] ?? null) === $user->id)
             ->sortByDesc('score')
-            ->values()
-            ->take(5)
-            ->toArray();
+            ->values();
 
-        return $users;
+        $top5 = $all->take(5);
+        $youInTop = $top5->contains('id', $user->id);
+
+        if (! $youInTop) {
+            $you = $all->firstWhere('id', $user->id);
+            if ($you) {
+                $top5 = $all
+                    ->filter(fn ($u) => ($u['score'] ?? 0) > 0 && ($u['id'] ?? null) !== $user->id)
+                    ->take(4)
+                    ->values();
+
+                $top5 = $top5
+                    ->push($you)
+                    ->sortByDesc('score')
+                    ->values()
+                    ->take(5);
+            }
+        }
+
+        return $top5->toArray();
     }
 
     /**
