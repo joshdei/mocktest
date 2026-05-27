@@ -40,7 +40,7 @@
                     {{ ($attempt->is_correct ?? false) ? 'Correct! ₦10 has been credited to your wallet' : 'Wrong answer. Better luck next week!' }}
                 </div>
                 <div class="text-sm mt-2 text-slate-700">
-                    Correct Answer: <span class="font-semibold">{{ $schedule->question->answer }}</span>
+                    Correct Answer: <span class="font-semibold">{{ $schedule->question->answer ?? '' }}</span>
                 </div>
             </div>
         </div>

@@ -65,6 +65,13 @@ Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 /* ── GOOGLE AUTH ONE TAP (POST) ── */
 Route::post('/auth/google/onetap', [GoogleAuthController::class, 'oneTap'])->name('auth.google.onetap');
 
+/* ── EMAIL VERIFICATION (RESEND) ── */
+Route::middleware('auth')->group(function () {
+    // Matches blade usage: route('verification.notice')
+    Route::get('/email/verification-notice', [\App\Http\Controllers\EmailVerificationController::class, 'resend'])
+        ->name('verification.notice');
+});
+
 /* ── PROTECTED DASHBOARD ── */
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
